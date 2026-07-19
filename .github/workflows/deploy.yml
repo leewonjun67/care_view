@@ -36,7 +36,7 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name care_view \
-            --image-uri ${{ steps.login-ecr.outputs.registry }}/careview_backend:latest
+            --image-uri ${{ steps.login-ecr.outputs.registry }}/careview-backend:latest
 
 
 # test123
