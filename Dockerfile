@@ -1,13 +1,17 @@
-FROM python:3.12-slim
+# AWS Lambda Python Runtime
+FROM public.ecr.aws/lambda/python:3.12
 
-ENV PYTHONUNBUFFERED 1
+# 작업 디렉토리
+WORKDIR ${LAMBDA_TASK_ROOT}
 
-WORKDIR /app
-
+# 의존성 설치
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# 프로젝트 복사
 COPY . .
 
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Lambda Handler 지정
+ENV LAMBDA_TASK_ROOT=/var/task
+ENTRYPOINT ["/lambda-entrypoint.sh"]
+CMD ["app.main.handler"]
