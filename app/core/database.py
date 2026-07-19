@@ -1,35 +1,33 @@
-# DB 연결 관리 : SQLAlchemy 엔진 생성 등
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
 from app.core.config import settings
 
-engine = create_engine(
-    settings.DATABASE_URL, 
-    pool_pre_ping=True
-)
+# 1. 엔진 생성을 지연시키기 위해 함수로 분리
+def get_engine():
+    # Supabase 연결 설정 및 타임아웃(5초) 제한 추가
+    return create_engine(
+        settings.DATABASE_URL, 
+        pool_pre_ping=True,
+        pool_recycle=300,
+        connect_args={"connect_timeout": 5}
+    )
 
-SessionLocal = sessionmaker(
-    autocommit=False, 
-    autoflush=False, 
-    bind=engine,
-    expire_on_commit=False
-)
-
-# 모든 모델이 상속받을 기본 클래스
-Base = declarative_base()
-
-# FastAPI 의존성 주입을 위한 DB 세션 함수
+# 2. 세션 생성 함수 (API 엔드포인트에서 호출됨)
 def get_db():
+    engine = get_engine()
+    SessionLocal = sessionmaker(
+        autocommit=False, 
+        autoflush=False, 
+        bind=engine,
+        expire_on_commit=False
+    )
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-def create_tables(engine):
-    """DB 엔진을 사용하여 Base에 정의된 모든 테이블을 생성합니다."""
-    # 모든 모델 클래스(User, Allergy 등)를 포함하는 Base.metadata를 사용합니다.
-    Base.metadata.create_all(bind=engine)
+# 3. 모델 정의를 위한 베이스
+Base = declarative_base()

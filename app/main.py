@@ -1,10 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from mangum import Mangum
 from sqlalchemy import text
+from sqlalchemy.orm import Session
 
-# 본인의 프로젝트 구조에 맞춘 import 경로
+# 프로젝트 구조에 맞춘 import
 from app.api.endpoints import user as user_api
 from app.api.endpoints import onboarding as onboarding_api
 from app.api.endpoints import record as record_api
@@ -13,15 +14,14 @@ from app.api.endpoints import meals as meals_api
 from app.api.endpoints import exercise
 from app.api.endpoints import expected_effect
 
-# database.py에서 설정한 engine을 가져옵니다.
-from app.core.database import engine
+# [수정] 전역 engine import 대신 get_db 함수를 import합니다.
+from app.core.database import get_db
 
 app = FastAPI(
     title="CareView API",
     version="v1",
     description="로그인, 회원가입, 일정 관리 등을 위한 API"
 )
-#"@@"
 
 # CORS 설정
 origins = [
@@ -54,13 +54,12 @@ app.include_router(expected_effect.router, tags=["Expected Effect"])
 def read_root():
     return {"message": "Welcome to CareView API V1"}
 
-# DB 연결 확인 및 헬스 체크
+# [수정] DB 연결 확인 헬스 체크 (get_db를 의존성으로 받아 사용)
 @app.get("/health", tags=["Health Check"])
-def health_check():
+def health_check(db: Session = Depends(get_db)):
     try:
-        # database.py에서 가져온 engine을 사용하여 실제 DB 연결 테스트
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
+        # 이제 db 세션을 통해 연결 테스트를 수행합니다.
+        db.execute(text("SELECT 1"))
         return {
             "status": "ok", 
             "db": "connected", 
@@ -73,7 +72,7 @@ def health_check():
             "message": f"DB Connection failed: {str(e)}"
         }
 
-# OpenAPI 설정
+# OpenAPI 설정 (기존과 동일)
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
