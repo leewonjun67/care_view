@@ -3,7 +3,8 @@ name: Deploy to Lambda
 on:
   push:
     branches:
-      - main  # main 브랜치에 푸시될 때 작동합니다.
+      - master  # main 브랜치에 푸시될 때 작동합니다.
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -34,5 +35,8 @@ jobs:
       - name: Update Lambda function
         run: |
           aws lambda update-function-code \
-            --function-name care_view \    # <--- 여기에 람다 함수 이름 입력
-            --image-uri ${{ steps.login-ecr.outputs.registry }}/your-ecr-repo-name:latest # <--- ECR 이름 다시 확인
+            --function-name care_view \
+            --image-uri ${{ steps.login-ecr.outputs.registry }}/careview_backend:latest
+
+
+# test123
