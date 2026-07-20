@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import DailyHeader from "../dailyfood/components/DailyHeader.jsx";
-import Footer from "../../layout/footer/Footer.jsx";
+import Footer from "../../layout/footer/footer.jsx";
 
 import RecordDayCard from "./components/card/RecordDayCard.jsx";
 import WeeklySummary from "./components/WeeklySummary.jsx";

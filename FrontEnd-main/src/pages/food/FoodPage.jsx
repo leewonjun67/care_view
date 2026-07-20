@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import DailyHeader from "../dailyfood/components/DailyHeader.jsx";
-import Footer from "../../layout/footer/Footer.jsx";
+import Footer from "../../layout/footer/footer.jsx";
 
 import ReFoodTitle from "./common/ReFoodTitle.jsx";
 import ReFoodTabs from "./common/ReFoodTabs.jsx";

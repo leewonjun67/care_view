@@ -1,7 +1,7 @@
 import React from "react";
 import main1 from "../../assets/main/main1.svg";
 import MainCta from "./components/MainCta.jsx";
-import Footer from "../../layout/footer/Footer.jsx";
+import Footer from "../../layout/footer/footer.jsx";
 
 export default function MainPage() {
   const heroGap = "clamp(64px, 12.11vh, 160px)";

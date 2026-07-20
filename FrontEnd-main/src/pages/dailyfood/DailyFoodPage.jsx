@@ -3,7 +3,7 @@ import SummaryCard from "./components/SummaryCard.jsx";
 import DailyCard from "./components/DailyCard.jsx";
 import DailyHeader from "./components/DailyHeader.jsx";
 import DailyHero from "./components/DailyHero.jsx";
-import Footer from "../../layout/footer/Footer.jsx";
+import Footer from "../../layout/footer/footer.jsx";
 
 import {
   useTodayMeals,
