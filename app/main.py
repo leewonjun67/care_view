@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from mangum import Mangum
@@ -9,21 +9,19 @@ from app.core.database import get_db
 
 
 def create_app() -> FastAPI:
-    # FastAPI 인스턴스 생성
     app = FastAPI(
         title="CareView API",
         version="v1",
         description="로그인, 회원가입, 일정 관리 등을 위한 API",
     )
 
-    # 프런트엔드에서 백엔드 API 호출을 허용할 출처
-    origins = [
-        # 로컬 개발 환경
+    # 브라우저에서 백엔드 API 호출을 허용할 프런트엔드 출처
+    allowed_origins = [
+        # 로컬 개발
         "http://localhost:3000",
-        "http://localhost:8000",
         "http://localhost:5173",
 
-        # 기존 배포 주소
+        # 기존 프런트 배포 주소
         "https://careview-front.onrender.com",
         "https://careview.kro.kr",
         "https://www.careview.kro.kr",
@@ -37,24 +35,36 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=allowed_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=[
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS",
+        ],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "Origin",
+            "X-Requested-With",
+        ],
     )
 
-    # 지연 로딩: 앱 생성 시점에 라우터 모듈 불러오기
+    # 앱 초기화 시 라우터 불러오기
     from app.api.endpoints import (
-        user,
-        onboarding,
-        record,
-        main_page,
-        meals,
         exercise,
         expected_effect,
+        main_page,
+        meals,
+        onboarding,
+        record,
+        user,
     )
 
-    # 라우터 등록
     app.include_router(user.router, tags=["Users"])
     app.include_router(onboarding.router, tags=["Onboarding"])
     app.include_router(record.router, tags=["Record"])
@@ -65,7 +75,9 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     def read_root():
-        return {"message": "Welcome to CareView API V1"}
+        return {
+            "message": "Welcome to CareView API V1",
+        }
 
     @app.get("/health", tags=["Health Check"])
     def health_check(db: Session = Depends(get_db)):
@@ -78,14 +90,13 @@ def create_app() -> FastAPI:
                 "message": "CareView API is running and DB is connected",
             }
 
-        except Exception as e:
+        except Exception as error:
             return {
                 "status": "error",
                 "db": "disconnected",
-                "message": f"DB Connection failed: {str(e)}",
+                "message": f"DB connection failed: {error}",
             }
 
-    # Swagger/OpenAPI JWT 인증 설정
     def custom_openapi():
         if app.openapi_schema:
             return app.openapi_schema
@@ -97,7 +108,6 @@ def create_app() -> FastAPI:
             routes=app.routes,
         )
 
-        # components가 존재하지 않는 경우를 대비
         openapi_schema.setdefault("components", {})
 
         openapi_schema["components"]["securitySchemes"] = {
@@ -107,8 +117,6 @@ def create_app() -> FastAPI:
                 "bearerFormat": "JWT",
             }
         }
-
-        security_requirement = [{"BearerAuth": []}]
 
         protected_tags = {
             "Users",
@@ -120,16 +128,17 @@ def create_app() -> FastAPI:
             "Expected Effect",
         }
 
+        security_requirement = [{"BearerAuth": []}]
+
         for path_item in openapi_schema.get("paths", {}).values():
-            for method in path_item.values():
-                # OpenAPI 경로 내부에 parameters 같은 비-HTTP 항목이 생길 경우 대비
-                if not isinstance(method, dict):
+            for operation in path_item.values():
+                if not isinstance(operation, dict):
                     continue
 
-                tags = method.get("tags", [])
+                tags = operation.get("tags", [])
 
                 if any(tag in protected_tags for tag in tags):
-                    method["security"] = security_requirement
+                    operation["security"] = security_requirement
 
         app.openapi_schema = openapi_schema
         return app.openapi_schema
@@ -139,8 +148,7 @@ def create_app() -> FastAPI:
     return app
 
 
-# FastAPI 앱 인스턴스
 app = create_app()
 
-# AWS Lambda 핸들러
+# Lambda Function URL → Mangum → FastAPI
 handler = Mangum(app)
