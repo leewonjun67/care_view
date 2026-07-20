@@ -14,7 +14,7 @@ def create_app():
         description="로그인, 회원가입, 일정 관리 등을 위한 API"
     )
 
-    # CORS 설정
+    # CORS 설정 (S3 정적 웹 사이트 호스팅 주소 추가 완료)
     origins = [
         "http://localhost:3000", 
         "http://localhost:8000",
@@ -22,6 +22,7 @@ def create_app():
         "https://careview-front.onrender.com",
         "https://careview.kro.kr",
         "https://www.careview.kro.kr",
+        "http://careview-front-bucket.s3-website.ap-northeast-2.amazonaws.com",  # S3 호스팅 주소 추가
     ]
 
     app.add_middleware(
