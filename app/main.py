@@ -4,25 +4,35 @@ from fastapi.openapi.utils import get_openapi
 from mangum import Mangum
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+
 from app.core.database import get_db
 
-def create_app():
+
+def create_app() -> FastAPI:
     # FastAPI 인스턴스 생성
     app = FastAPI(
         title="CareView API",
         version="v1",
-        description="로그인, 회원가입, 일정 관리 등을 위한 API"
+        description="로그인, 회원가입, 일정 관리 등을 위한 API",
     )
 
-    # CORS 설정 (S3 정적 웹 사이트 호스팅 주소 추가 완료)
+    # 프런트엔드에서 백엔드 API 호출을 허용할 출처
     origins = [
-        "http://localhost:3000", 
+        # 로컬 개발 환경
+        "http://localhost:3000",
         "http://localhost:8000",
         "http://localhost:5173",
+
+        # 기존 배포 주소
         "https://careview-front.onrender.com",
         "https://careview.kro.kr",
         "https://www.careview.kro.kr",
-        "http://careview-front-bucket.s3-website.ap-northeast-2.amazonaws.com",  # S3 호스팅 주소 추가
+
+        # 기존 S3 정적 웹사이트 주소
+        "http://careview-front-bucket.s3-website.ap-northeast-2.amazonaws.com",
+
+        # 현재 CloudFront 프런트엔드 주소
+        "https://d18nlrjzbq5l8h.cloudfront.net",
     ]
 
     app.add_middleware(
@@ -33,9 +43,15 @@ def create_app():
         allow_headers=["*"],
     )
 
-    # [지연 로딩 적용] 함수 내부에서 라우터 모듈을 import하여 초기 로딩 부하를 줄임
+    # 지연 로딩: 앱 생성 시점에 라우터 모듈 불러오기
     from app.api.endpoints import (
-        user, onboarding, record, main_page, meals, exercise, expected_effect
+        user,
+        onboarding,
+        record,
+        main_page,
+        meals,
+        exercise,
+        expected_effect,
     )
 
     # 라우터 등록
@@ -55,51 +71,76 @@ def create_app():
     def health_check(db: Session = Depends(get_db)):
         try:
             db.execute(text("SELECT 1"))
+
             return {
-                "status": "ok", 
-                "db": "connected", 
-                "message": "CareView API is running and DB is connected"
-            }
-        except Exception as e:
-            return {
-                "status": "error", 
-                "db": "disconnected", 
-                "message": f"DB Connection failed: {str(e)}"
+                "status": "ok",
+                "db": "connected",
+                "message": "CareView API is running and DB is connected",
             }
 
-    # OpenAPI 설정
+        except Exception as e:
+            return {
+                "status": "error",
+                "db": "disconnected",
+                "message": f"DB Connection failed: {str(e)}",
+            }
+
+    # Swagger/OpenAPI JWT 인증 설정
     def custom_openapi():
         if app.openapi_schema:
             return app.openapi_schema
-        
+
         openapi_schema = get_openapi(
             title=app.title,
             version=app.version,
             description=app.description,
             routes=app.routes,
         )
-        
+
+        # components가 존재하지 않는 경우를 대비
+        openapi_schema.setdefault("components", {})
+
         openapi_schema["components"]["securitySchemes"] = {
             "BearerAuth": {
                 "type": "http",
-                "scheme": "bearer", 
-                "bearerFormat": "JWT"
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
             }
         }
-        
+
         security_requirement = [{"BearerAuth": []}]
-        for route in openapi_schema["paths"].values():
-            for method in route.values():
-                tags = method.get('tags', [])
-                if tags and any(tag in ['Users', 'Onboarding', 'Record', 'Main Page', 'meals', 'Exercise', 'Expected Effect'] for tag in tags):
+
+        protected_tags = {
+            "Users",
+            "Onboarding",
+            "Record",
+            "Main Page",
+            "meals",
+            "Exercise",
+            "Expected Effect",
+        }
+
+        for path_item in openapi_schema.get("paths", {}).values():
+            for method in path_item.values():
+                # OpenAPI 경로 내부에 parameters 같은 비-HTTP 항목이 생길 경우 대비
+                if not isinstance(method, dict):
+                    continue
+
+                tags = method.get("tags", [])
+
+                if any(tag in protected_tags for tag in tags):
                     method["security"] = security_requirement
 
         app.openapi_schema = openapi_schema
         return app.openapi_schema
 
     app.openapi = custom_openapi
+
     return app
 
-# 앱 인스턴스 생성 및 Mangum 핸들러 등록
+
+# FastAPI 앱 인스턴스
 app = create_app()
+
+# AWS Lambda 핸들러
 handler = Mangum(app)
