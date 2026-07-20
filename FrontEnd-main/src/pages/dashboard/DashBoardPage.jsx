@@ -1,5 +1,5 @@
 import React from "react";
-import Footer from "../../layout/footer/Footer.jsx";
+import Footer from "../../layout/footer/footer.jsx";
 import DashBanner from "./components/banner/DashBanner.jsx";
 import MetricsRow from "./components/card/MetricsRow.jsx";
 import Calendar from "./components/calendar/Calendar.jsx";
