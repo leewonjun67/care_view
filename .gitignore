@@ -1,0 +1,22 @@
+# Python Virtual Environment
+venv/
+__pycache__/
+*.pyc
+
+# Docker/System files
+.dockerignore
+.vscode/
+
+# Environment Variables
+.env
+
+# Database/Log files
+*.log
+*.sqlite
+/dbdata/*
+/postgres_data/*
+
+# Frontend
+FrontEnd-main/node_modules/
+FrontEnd-main/dist/
+FrontEnd-main/.env

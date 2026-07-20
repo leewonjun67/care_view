@@ -1,33 +1,42 @@
-import os
+from collections.abc import Generator
+
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
 from app.core.config import settings
 
-# 1. 엔진 생성을 지연시키기 위해 함수로 분리
-def get_engine():
-    # Supabase 연결 설정 및 타임아웃(5초) 제한 추가
-    return create_engine(
-        settings.DATABASE_URL, 
-        pool_pre_ping=True,
-        pool_recycle=300,
-        connect_args={"connect_timeout": 5}
-    )
 
-# 2. 세션 생성 함수 (API 엔드포인트에서 호출됨)
-def get_db():
-    engine = get_engine()
-    SessionLocal = sessionmaker(
-        autocommit=False, 
-        autoflush=False, 
-        bind=engine,
-        expire_on_commit=False
-    )
+# SQLAlchemy 엔진
+# Lambda 컨테이너가 재사용되는 동안 엔진과 커넥션 풀도 재사용됩니다.
+engine: Engine = create_engine(
+    settings.DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    connect_args={
+        "connect_timeout": 5,
+    },
+)
+
+
+# DB 세션 생성기
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    expire_on_commit=False,
+)
+
+
+# FastAPI 의존성 주입용 DB 세션
+def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
+
     try:
         yield db
     finally:
         db.close()
 
-# 3. 모델 정의를 위한 베이스
+
+# SQLAlchemy 모델들이 상속할 기본 클래스
 Base = declarative_base()
