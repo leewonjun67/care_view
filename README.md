@@ -133,13 +133,6 @@ npm install
 npm run dev
 ```
 
----
-
-## Live Demo
-
-```
-https://YOUR-CLOUDFRONT-DOMAIN
-```
 
 ---
 
