@@ -97,12 +97,6 @@ def create_app() -> FastAPI:
                 "message": f"DB connection failed: {error}",
             }
 
-    # CloudWatch Alarm + SNS 이메일 알림 테스트용
-    # 테스트 완료 후 삭제 권장
-    @app.get("/test-error", tags=["Monitoring Test"])
-    def test_error():
-        raise RuntimeError("CloudWatch SNS Test")
-
     def custom_openapi():
         if app.openapi_schema:
             return app.openapi_schema
