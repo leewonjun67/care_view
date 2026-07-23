@@ -1,6 +1,5 @@
 services:
   fastapi_app:
-    # 아래 라인을 추가하여 도커가 무조건 8개월 전 오리지널 이미지를 사용하도록 지정합니다.
     image: care_view-fastapi_app:latest
     build: .
     env_file:
@@ -12,16 +11,14 @@ services:
     depends_on:
       - db
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    environment:
-      SECRET_KEY : "UfPEGpDrvk3AdtCPmaaorMFFMkHpCnH1Bv-Qa8pXH4k"
 
   db:
-    image: postgres:18-alpine 
+    image: postgres:18-alpine
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: careview_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
