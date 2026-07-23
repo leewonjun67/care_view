@@ -1,24 +1,22 @@
-# app/core/config.py
+from typing import Final
 
-from pydantic_settings import BaseSettings 
-from typing import Final 
-import os 
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
-
-    # 🚨 수정: DATABASE_URL의 하드코딩된 기본값을 제거했습니다.
-    # 이제 이 값은 Pydantic에 의해 환경 변수(DATABASE_URL)에서 필수로 로드됩니다.
-    DATABASE_URL: str = ""
-    
-    # 보안 키 (JWT 토큰 생성에 사용)
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "_DFDTWqmwznAiJLte696DXnBbsxAP6_AKaKUqpxXCefwMRMY6UVjeA")
+    # 기본값을 두지 않음:
+    # 값이 없으면 애플리케이션 실행 단계에서 오류 발생
+    DATABASE_URL: str
+    SECRET_KEY: str
 
     ALGORITHM: str = "HS256"
-
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    
-    class Config:
-        env_file = ".env" 
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
 
 settings: Final[Settings] = Settings()
