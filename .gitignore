@@ -4,7 +4,6 @@ __pycache__/
 *.pyc
 
 # Docker/System files
-.dockerignore
 .vscode/
 
 # Environment Variables
